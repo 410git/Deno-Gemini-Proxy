@@ -22,22 +22,13 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
             :root {
               /* 清爽配色 */
               --color-bg: #f4f8fb; /* 页面淡蓝灰背景 */
-              --color-card-bg: rgba(255, 255, 255, 0.55);
+              --color-card-bg: rgba(255, 255, 255, 0.5); /* 卡片背景，更透明 */
               --color-neon-1: #2c7be5; /* 主色 */
               --color-neon-2: #29c5ff; /* 渐变第二色 */
               --color-text-main: #212529; /* 深色文字 */
               --color-accent: #17a673;
             }
             * { box-sizing: border-box; }
-            /* 通用毛玻璃效果，让容器、统计卡片、Key 项全部半透明并模糊 */
-            .container,
-            .stat-card,
-            .key-item {
-              background: var(--color-card-bg);
-              backdrop-filter: blur(18px) saturate(180%);
-              -webkit-backdrop-filter: blur(18px) saturate(180%);
-              border: 1px solid rgba(255, 255, 255, 0.35);
-            }
             body {
               margin: 0;
               font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -68,13 +59,13 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
 
             .container {
               width: 100%;
-              max-width: 1100px;
-              backdrop-filter: blur(20px) saturate(160%);
+              max-width: 800px; /* 稍微收窄以突出卡片感 */
+              backdrop-filter: blur(25px) saturate(180%);
               background: var(--color-card-bg);
-              border: 1px solid rgba(255, 255, 255, 0.08);
-              border-radius: 16px;
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              border-radius: 24px; /* 更圆润的角 */
               padding: 40px 50px;
-              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+              box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* 柔和阴影 */
             }
 
             .title {
@@ -100,9 +91,10 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
             }
             .stat-card {
               padding: 25px 30px;
-              background: rgba(255, 255, 255, 0.05);
-              border: 1px solid rgba(255, 255, 255, 0.08);
-              border-radius: 12px;
+              background: rgba(255, 255, 255, 0.4); /* 增加卡片背景透明度 */
+              backdrop-filter: blur(10px);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              border-radius: 16px;
               text-align: center;
               transition: transform 0.25s ease, box-shadow 0.25s ease;
             }
@@ -128,15 +120,15 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               justify-content: space-between;
               align-items: center;
               padding: 18px 22px;
-              background: rgba(255, 255, 255, 0.04);
-              border: 1px solid rgba(255, 255, 255, 0.08);
-              border-radius: 10px;
+              background: rgba(255, 255, 255, 0.3);
+              backdrop-filter: blur(5px);
+              border: 1px solid rgba(255, 255, 255, 0.18);
+              border-radius: 12px;
               margin-bottom: 15px;
               transition: background 0.25s ease, transform 0.25s ease;
             }
             .key-item:hover {
-              background: rgba(255, 255, 255, 0.7);
-              
+              background: rgba(255, 255, 255, 0.08);
               transform: translateX(6px);
             }
             .key-index { font-weight: 600; color: var(--color-neon-2); min-width: 80px; }
@@ -156,12 +148,13 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               padding: 14px 38px;
               font-size: 1rem;
               font-weight: 700;
-              border: none;
+              border: 1px solid rgba(255, 255, 255, 0.2);
               border-radius: 50px;
               cursor: pointer;
-              background: linear-gradient(90deg, var(--color-neon-1), var(--color-neon-2));
-              color: #000;
-              box-shadow: 0 0 12px var(--color-neon-1);
+              background: rgba(255, 255, 255, 0.2);
+              backdrop-filter: blur(10px);
+              color: var(--color-text-main);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
               transition: transform 0.25s ease, box-shadow 0.25s ease;
             }
             .btn:hover { transform: translateY(-4px); box-shadow: 0 0 18px var(--color-neon-2); }

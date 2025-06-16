@@ -138,27 +138,20 @@ export class KVManager {
     this.memoryState.version = 1;
   }
 
+  public updateKeyUsage(key: string) {
+    this.memoryState.stats[key] = (this.memoryState.stats[key] || 0) + 1;
+    this.memoryState.totalRequests += 1;
+    this.memoryState.version += 1; // 每次更新都增加版本号
+  }
+
   public getNextApiKey(): string | undefined {
     if (API_KEYS.length === 0) {
       return undefined;
     }
-    // 注意：这里只获取key，轮转和计数在 incrementRequestStats 中完成
     const currentKey = API_KEYS[this.memoryState.keyIndex];
-    return currentKey;
-  }
-
-  public incrementRequestStats(apiKey: string) {
     this.memoryState.keyIndex = (this.memoryState.keyIndex + 1) % API_KEYS.length;
-    this.memoryState.totalRequests++;
-    
-    // 确保即使 stats 中没有这个 key（例如，动态增删 key 的情况），也不会报错
-    if (this.memoryState.stats[apiKey] !== undefined) {
-        this.memoryState.stats[apiKey]++;
-    } else {
-        // 如果 stats 中不存在这个 key，则初始化为 1
-        this.memoryState.stats[apiKey] = 1;
-    }
-    this.memoryState.version += 1; // 每次更新都增加版本号
+    this.memoryState.version += 1; // 每次轮转都增加版本号
+    return currentKey;
   }
 
   public async clearStats() {
@@ -170,3 +163,4 @@ export class KVManager {
 }
 
 export const kvManager = new KVManager();
+await kvManager.init();

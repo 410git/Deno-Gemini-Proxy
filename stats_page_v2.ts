@@ -21,152 +21,135 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
           <style>
             :root {
               /* 清爽配色 */
-              --color-bg: #f4f8fb; /* 页面淡蓝灰背景 */
-              --color-card-bg: rgba(255, 255, 255, 0.5); /* 卡片背景，更透明 */
-              --color-neon-1: #2c7be5; /* 主色 */
-              --color-neon-2: #29c5ff; /* 渐变第二色 */
-              --color-text-main: #212529; /* 深色文字 */
+              --color-bg: #f0f4f8;
+              --color-card-bg: rgba(255, 255, 255, 0.45);
+              --color-border: rgba(255, 255, 255, 0.7);
+              --color-neon-1: #2c7be5;
+              --color-neon-2: #29c5ff;
+              --color-text-main: #122;
               --color-accent: #17a673;
             }
             * { box-sizing: border-box; }
             body {
               margin: 0;
               font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-              background: var(--color-bg);
               color: var(--color-text-main);
               min-height: 100vh;
               display: flex;
               flex-direction: column;
               align-items: center;
-              justify-content: flex-start;
               padding: 40px 20px;
               overflow-x: hidden;
             }
-            /* 背景动画 */
-            .gradient-bg {
+            .background {
               position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              z-index: -1;
+              background-color: var(--color-bg);
+            }
+            .background::before {
+              content: '';
+              position: absolute;
               top: -50%;
               left: -50%;
               width: 200%;
               height: 200%;
-              background: radial-gradient(circle at 25% 25%, var(--color-neon-2) 0%, transparent 60%),
-                          radial-gradient(circle at 75% 75%, var(--color-neon-1) 0%, transparent 60%);
+              background: radial-gradient(circle at 25% 25%, var(--color-neon-2) 0%, transparent 50%),
+                          radial-gradient(circle at 75% 75%, var(--color-neon-1) 0%, transparent 50%);
               animation: rotate 20s linear infinite;
-              z-index: -2;
-              filter: blur(120px) opacity(0.5);
+              filter: blur(100px) opacity(0.6);
             }
             @keyframes rotate { to { transform: rotate(360deg); } }
 
             .container {
               width: 100%;
-              max-width: 800px; /* 稍微收窄以突出卡片感 */
-              backdrop-filter: blur(25px) saturate(180%);
+              max-width: 800px;
+              backdrop-filter: blur(20px) saturate(150%);
+              -webkit-backdrop-filter: blur(20px) saturate(150%);
               background: var(--color-card-bg);
-              border: 1px solid rgba(255, 255, 255, 0.2);
-              border-radius: 24px; /* 更圆润的角 */
-              padding: 40px 50px;
-              box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* 柔和阴影 */
+              border: 1px solid var(--color-border);
+              border-radius: 24px;
+              padding: 30px 40px;
+              box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
             }
 
             .title {
-              font-size: 3rem;
-              font-weight: 800;
+              font-size: 2.5rem;
+              font-weight: 700;
               text-align: center;
-              background: linear-gradient(90deg, var(--color-neon-1), var(--color-neon-2));
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-              filter: drop-shadow(0 0 6px var(--color-neon-1));
-              animation: flicker 3s infinite alternate;
-            }
-            @keyframes flicker {
-              0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 0.99; }
-              20%, 24%, 55% { opacity: 0.4; }
+              color: var(--color-text-main);
+              margin-bottom: 30px;
             }
 
             .stats-grid {
               display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-              gap: 25px;
-              margin-top: 40px;
+              grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 20px;
+              margin-bottom: 30px;
             }
             .stat-card {
-              padding: 25px 30px;
-              background: rgba(255, 255, 255, 0.4); /* 增加卡片背景透明度 */
-              backdrop-filter: blur(10px);
-              border: 1px solid rgba(255, 255, 255, 0.2);
+              padding: 20px;
+              background: rgba(255, 255, 255, 0.2);
               border-radius: 16px;
               text-align: center;
-              transition: transform 0.25s ease, box-shadow 0.25s ease;
-            }
-            .stat-card:hover {
-              transform: translateY(-6px) scale(1.03);
-              box-shadow: 0 0 12px var(--color-neon-1);
             }
             .stat-value {
-              font-size: 2rem;
-              font-weight: 700;
-              margin-bottom: 6px;
-              color: var(--color-accent);
+              font-size: 1.8rem;
+              font-weight: 600;
+              color: var(--color-neon-1);
             }
-            .stat-label { font-size: 0.95rem; letter-spacing: 1px; opacity: 0.9; }
+            .stat-label { font-size: 0.85rem; opacity: 0.8; }
 
             .key-list {
               list-style: none;
               padding: 0;
-              margin-top: 50px;
             }
             .key-item {
               display: flex;
-              justify-content: space-between;
               align-items: center;
-              padding: 18px 22px;
-              background: rgba(255, 255, 255, 0.3);
-              backdrop-filter: blur(5px);
-              border: 1px solid rgba(255, 255, 255, 0.18);
+              padding: 12px 16px;
+              margin-bottom: 10px;
               border-radius: 12px;
-              margin-bottom: 15px;
-              transition: background 0.25s ease, transform 0.25s ease;
+              transition: background 0.2s ease;
             }
-            .key-item:hover {
-              background: rgba(255, 255, 255, 0.08);
-              transform: translateX(6px);
-            }
-            .key-index { font-weight: 600; color: var(--color-neon-2); min-width: 80px; }
+            .key-item:hover { background: rgba(255, 255, 255, 0.2); }
+            .key-index { font-weight: 500; color: var(--color-neon-1); min-width: 60px; font-size: 0.9rem; }
             .key-value {
               font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
               word-break: break-all;
               color: var(--color-text-main);
-              opacity: 0.9;
               flex: 1;
               margin: 0 10px;
+              font-size: 0.9rem;
             }
-            .key-count { font-weight: 700; color: var(--color-neon-1); min-width: 80px; text-align: right; }
+            .key-count { font-weight: 600; color: var(--color-accent); min-width: 60px; text-align: right; font-size: 0.9rem; }
 
-            .actions { text-align: center; margin-top: 50px; display: flex; flex-direction: column; gap: 16px; }
+            .actions { text-align: center; margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
             .btn {
               appearance: none;
-              padding: 14px 38px;
-              font-size: 1rem;
-              font-weight: 700;
-              border: 1px solid rgba(255, 255, 255, 0.2);
+              padding: 12px 30px;
+              font-size: 0.95rem;
+              font-weight: 500;
+              border: 1px solid transparent;
               border-radius: 50px;
               cursor: pointer;
-              background: rgba(255, 255, 255, 0.2);
-              backdrop-filter: blur(10px);
-              color: var(--color-text-main);
-              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-              transition: transform 0.25s ease, box-shadow 0.25s ease;
+              background: var(--color-neon-1);
+              color: white;
+              transition: all 0.25s ease;
             }
-            .btn:hover { transform: translateY(-4px); box-shadow: 0 0 18px var(--color-neon-2); }
-            .btn:active { transform: translateY(0); }
+            .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(44, 123, 229, 0.4); }
             .link {
-              text-align: center;
-              margin-top: 30px;
+              margin-top: 15px;
               color: var(--color-neon-1);
-              text-decoration: underline;
+              text-decoration: none;
               cursor: pointer;
-              font-size: 0.95rem;
+              font-size: 0.9rem;
+              opacity: 0.8;
             }
+            .link:hover { text-decoration: underline; }
           </style>
         </head>
         <body>

@@ -20,13 +20,13 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
           <title>API Key 炫酷看板 v2</title>
           <style>
             :root {
-              /* 霓虹配色 */
-              --color-bg: #0d0d0d;
-              --color-card-bg: rgba(40, 40, 40, 0.6);
-              --color-neon-1: #00e7ff;
-              --color-neon-2: #ff00c3;
-              --color-text-main: #f1f1f1;
-              --color-accent: #00ff88;
+              /* 清爽配色 */
+              --color-bg: #f4f8fb; /* 页面淡蓝灰背景 */
+              --color-card-bg: rgba(255, 255, 255, 0.8);
+              --color-neon-1: #2c7be5; /* 主色 */
+              --color-neon-2: #29c5ff; /* 渐变第二色 */
+              --color-text-main: #212529; /* 深色文字 */
+              --color-accent: #17a673;
             }
             * { box-sizing: border-box; }
             body {

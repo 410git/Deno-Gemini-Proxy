@@ -218,6 +218,9 @@ export async function handleStatsPage(request: Request, clientKey: string): Prom
                 <button type="submit" class="reset-btn" style="background: linear-gradient(145deg, #3498db, #2980b9);">清空统计数据</button>
               </form>
             </div>
+            <div style="text-align:center;margin-top:25px;">
+              <a href="/stats2?key=${clientKey}" style="color:#007bff;text-decoration:underline;font-weight:600;">前往炫酷 V2 看板 →</a>
+            </div>
           </div>
         </body>
       </html>`;

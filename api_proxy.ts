@@ -43,11 +43,19 @@ export async function handleApiProxy(request: Request): Promise<Response> {
 
     console.log(`Forwarding request (using key: ${apiKey.slice(0, 4)}...) to: ${newUrl.toString()}`);
 
-    // 转发请求
-    const response = await fetch(new Request(newUrl, request));
-    return response;
+    // 只要尝试转发，就立刻计数，无论成功与否
+    kvManager.incrementRequestStats(apiKey);
+
+    try {
+      // 转发请求
+      const response = await fetch(new Request(newUrl, request));
+      return response;
+    } catch (error: unknown) {
+      console.error(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`);
+      return new Response(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`, { status: 502 });
+    }
   } catch (error: unknown) {
-    console.error("⚠️ API 代理请求处理错误:", error);
-    return new Response(`🚨 代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`, { status: 500 });
+    console.error("API 代理请求处理错误:", error);
+    return new Response(`代理请求处理错误: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`, { status: 500 });
   }
 }

@@ -192,7 +192,7 @@ export async function handleStatsPage(request: Request, clientKey: string): Prom
               </div>
               <div class="summary-item">
                 <span class="summary-item-label">上次同步时间</span>
-                <div class="summary-item-value"><strong>${state.lastSync > 0 ? new Date(state.lastSync).toLocaleString() : '尚未同步'}</strong></div>
+                <div class="summary-item-value"><strong>${state.lastSync > 0 ? new Date(state.lastSync).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '尚未同步'}</strong></div>
               </div>
             </div>
             <h2 class="list-title">🔑 API Key 使用统计</h2>

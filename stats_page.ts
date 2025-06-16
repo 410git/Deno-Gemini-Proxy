@@ -1,19 +1,11 @@
 // stats_page.ts
 import { kvManager } from "./kv_manager.ts";
-import { MASTER_KEY } from "./config.ts";
 
-export async function handleStatsPage(request: Request): Promise<Response> {
-  const url = new URL(request.url);
-  const clientKey = url.searchParams.get('key') || request.headers.get('x-goog-api-key');
-
-  if (clientKey !== MASTER_KEY) {
-    return new Response('🔒 未授权', { status: 401 });
-  }
-
+export async function handleStatsPage(request: Request, clientKey: string): Promise<Response> {
   // GET请求 - 显示统计页面
   if (request.method === "GET") {
-    const stats = kvManager.getMemoryState().stats;
-    const totalRequests = kvManager.getMemoryState().totalRequests;
+    // 一次性获取状态快照，保证数据一致性
+    const state = kvManager.getMemoryState();
     const statsHTML = `
       <!DOCTYPE html>
       <html lang="zh-CN">
@@ -184,54 +176,42 @@ export async function handleStatsPage(request: Request): Promise<Response> {
         </head>
         <body>
           <div class="container">
-            <div class="stats-header">
-              <h1>📊 API Key 看板</h1>
-            </div>
-
+            <div class="stats-header"><h1>📊 API Key 看板</h1></div>
             <div class="stats-summary">
               <div class="summary-item">
                 <span class="summary-item-label">总请求数</span>
-                <div class="summary-item-value"><strong>${totalRequests}</strong></div>
+                <div class="summary-item-value"><strong>${state.totalRequests}</strong></div>
               </div>
               <div class="summary-item">
-                <span class="summary-item-label">统计版本</span>
-                <div class="summary-item-value"><strong>v${kvManager.getMemoryState().statsVersion}</strong></div>
+                <span class="summary-item-label">状态版本</span>
+                <div class="summary-item-value"><strong>v${state.version}</strong></div>
               </div>
               <div class="summary-item">
-                <span class="summary-item-label">当前轮转 Key 索引</span>
-                <div class="summary-item-value"><strong>${kvManager.getMemoryState().currentKeyIndex}</strong></div>
+                <span class="summary-item-label">当前 Key 索引</span>
+                <div class="summary-item-value"><strong>${state.keyIndex}</strong></div>
               </div>
               <div class="summary-item">
                 <span class="summary-item-label">上次同步时间</span>
-                <div class="summary-item-value"><strong>${new Date(kvManager.getMemoryState().lastSyncTime).toLocaleString()}</strong></div>
+                <div class="summary-item-value"><strong>${state.lastSync > 0 ? new Date(state.lastSync).toLocaleString() : '尚未同步'}</strong></div>
               </div>
             </div>
-
             <h2 class="list-title">🔑 API Key 使用统计</h2>
             <ul class="key-list">
-              ${
-                Object.entries(stats).length > 0
-                  ? Object.entries(stats)
-                      .map(
-                        ([key, count], index) => `
-                        <li class="key-item">
-                          <div class="key-details">
-                            <span class="key-index">Key ${index + 1}:</span>
-                            <code class="key-value">${key}</code>
-                          </div>
-                          <span class="key-count">${count} 次</span>
-                        </li>
-                      `
-                      )
-                      .join("")
-                  : '<li class="no-keys-message">暂无 API Key 使用统计。</li>'
-              }
+              ${Object.entries(state.stats).length > 0
+                ? Object.entries(state.stats).map(([key, count], index) => `
+                  <li class="key-item">
+                    <div class="key-details">
+                      <span class="key-index">Key ${index + 1}:</span>
+                      <code class="key-value">${key}</code>
+                    </div>
+                    <span class="key-count">${count} 次</span>
+                  </li>`).join("")
+                : '<li>暂无统计</li>'}
             </ul>
-
             <div class="reset-form">
               <form action="/reset" method="POST">
                 <input type="hidden" name="key" value="${clientKey}">
-                <button type="submit" class="reset-btn">重置所有统计数据和 KV 存储</button>
+                <button type="submit" class="reset-btn">重置所有状态和 KV 存储</button>
               </form>
               <form action="/clearstats" method="POST" style="margin-top: 15px;">
                 <input type="hidden" name="key" value="${clientKey}">
@@ -240,18 +220,17 @@ export async function handleStatsPage(request: Request): Promise<Response> {
             </div>
           </div>
         </body>
-      </html>
-    `;
-    return new Response(statsHTML, {
-      headers: { "content-type": "text/html; charset=utf-8" },
-    });
-  } else if (request.method === "POST") {
-    // 处理重置或清空统计数据的POST请求
-    const formUrl = new URL(request.url);
-    if (formUrl.pathname === "/reset") {
+      </html>`;
+    return new Response(statsHTML, { headers: { "content-type": "text/html; charset=utf-8" } });
+  }
+  
+  if (request.method === "POST") {
+    const { pathname } = new URL(request.url);
+    if (pathname === "/reset") {
       await kvManager.resetKvStore();
-      return new Response("✅ KV 存储和统计数据已重置。", { status: 200 });
-    } else if (formUrl.pathname === "/clearstats") {
+      return new Response("✅ KV 存储和状态已重置。", { status: 200 });
+    }
+    if (pathname === "/clearstats") {
       await kvManager.clearStats();
       return new Response("✅ 统计数据已清空。", { status: 200 });
     }

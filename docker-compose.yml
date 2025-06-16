@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  deno-proxy:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # 请修改为您的实际配置
+      - API_KEYS=your_api_key_1,your_api_key_2,your_api_key_3
+      - MASTER_KEY=your_master_key
+      - TARGET_API_BASE_URL=https://generativelanguage.googleapis.com
+      - RESET_KV=0
+    restart: unless-stopped
+    volumes:
+      # 持久化 KV 数据库文件到本地
+      # Deno 会在工作目录 /app 下创建 KV 数据库文件
+      - kv_data:/app
+    
+volumes:
+  kv_data:
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/stats?key=${MASTER_KEY}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

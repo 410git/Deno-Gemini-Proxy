@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
     "lib": ["deno.ns", "deno.window", "deno.unstable"],
-    "strict": true,
-    "jsx": "react-jsx",
-    "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment"
+    "strict": true
+
   }
 }

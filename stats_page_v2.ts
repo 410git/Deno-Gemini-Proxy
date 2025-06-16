@@ -22,7 +22,7 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
             :root {
               /* 清爽配色 */
               --color-bg: #f4f8fb; /* 页面淡蓝灰背景 */
-              --color-card-bg: rgba(255, 255, 255, 0.8);
+              --color-card-bg: rgba(255, 255, 255, 0.1);
               --color-neon-1: #2c7be5; /* 主色 */
               --color-neon-2: #29c5ff; /* 渐变第二色 */
               --color-text-main: #212529; /* 深色文字 */
@@ -60,12 +60,12 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
             .container {
               width: 100%;
               max-width: 1100px;
-              backdrop-filter: blur(20px) saturate(160%);
+              backdrop-filter: blur(50px) saturate(220%);
               background: var(--color-card-bg);
-              border: 1px solid rgba(255, 255, 255, 0.08);
+              border: 1px solid rgba(255, 255, 255, 0.3);
               border-radius: 16px;
               padding: 40px 50px;
-              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+              box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
             }
 
             .title {
@@ -91,8 +91,9 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
             }
             .stat-card {
               padding: 25px 30px;
-              background: rgba(255, 255, 255, 0.05);
-              border: 1px solid rgba(255, 255, 255, 0.08);
+              background: rgba(255, 255, 255, 0.15);
+              backdrop-filter: blur(20px) saturate(200%);
+              border: 1px solid rgba(255, 255, 255, 0.3);
               border-radius: 12px;
               text-align: center;
               transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -119,8 +120,9 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               justify-content: space-between;
               align-items: center;
               padding: 18px 22px;
-              background: rgba(255, 255, 255, 0.04);
-              border: 1px solid rgba(255, 255, 255, 0.08);
+              background: rgba(255, 255, 255, 0.12);
+              backdrop-filter: blur(15px) saturate(200%);
+              border: 1px solid rgba(255, 255, 255, 0.3);
               border-radius: 10px;
               margin-bottom: 15px;
               transition: background 0.25s ease, transform 0.25s ease;

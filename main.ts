@@ -1,5 +1,6 @@
 import { kvManager } from "./kv_manager.ts";
 import { handleStatsPage } from "./stats_page.ts";
+import { handleStatsPageV2 } from "./stats_page_v2.ts";
 import { handleApiProxy } from "./api_proxy.ts";
 import { TARGET_API_BASE_URL, MASTER_KEY } from "./config.ts";
 
@@ -14,7 +15,7 @@ async function handler(request: Request): Promise<Response> {
     const path = url.pathname;
 
     // 统计页面路由，增加前置授权
-    if (path === "/stats" || path === "/reset" || path === "/clearstats") {
+    if (path === "/stats" || path === "/stats2" || path === "/reset" || path === "/clearstats") {
       let clientKey: string | null = url.searchParams.get('key') || request.headers.get('x-goog-api-key');
 
       if (request.method === "POST") {
@@ -32,7 +33,10 @@ async function handler(request: Request): Promise<Response> {
       if (!MASTER_KEY || clientKey !== MASTER_KEY) {
         return new Response('🔒 未授权', { status: 401 });
       }
-      // 将验证通过的 key 传递给页面处理器
+      // 根据不同路径返回对应看板
+      if (path === "/stats2") {
+        return handleStatsPageV2(request, clientKey);
+      }
       return handleStatsPage(request, clientKey);
     }
 

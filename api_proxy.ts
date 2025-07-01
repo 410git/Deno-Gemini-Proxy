@@ -67,7 +67,8 @@ export async function handleApiProxy(request: Request): Promise<Response> {
         // If this is the last attempt, we don't consume the body, as we will return this response.
         if (attempt < maxRetries) {
           await response.text(); // Consume body to release connection
-          console.log("Retrying...");
+          console.log("Retrying in 0.25s...");
+          await new Promise(resolve => setTimeout(resolve, 250)); // Wait for 250ms
         }
 
       } catch (error: unknown) {

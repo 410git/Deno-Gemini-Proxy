@@ -46,41 +46,59 @@ export async function handleApiProxy(request: Request): Promise<Response> {
     // 只要尝试转发，就立刻计数，无论成功与否
     kvManager.updateKeyUsage(apiKey);
 
-    const maxRetries = 2;
+    const maxRetries = 2; // 最多重试2次，总共3次尝试
     let lastResponse: Response | undefined;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const response = await fetch(new Request(newUrl, request));
 
-        if (response.status !== 429) {
-          // Not a 429, so we return the response directly
+        // 对于 429 (Too Many Requests) 和 503 (Service Unavailable) 错误进行重试
+        if (response.status !== 429 && response.status !== 503) {
+          // 不是可重试的错误，直接返回响应
           return response;
         }
 
-        // It's a 429, store it and prepare for retry
+        // 是可重试的错误，保存响应对象
         lastResponse = response;
         
-        console.log(`Request to ${newUrl.pathname} failed with 429. Attempt ${attempt + 1} of ${maxRetries + 1}.`);
+        console.log(`Request to ${newUrl.pathname} failed with ${response.status}. Attempt ${attempt + 1} of ${maxRetries + 1}.`);
 
-        // We must consume the response body to close the connection and allow for a retry.
-        // If this is the last attempt, we don't consume the body, as we will return this response.
+        // 如果不是最后一次尝试，消费响应体并等待后重试
         if (attempt < maxRetries) {
-          await response.text(); // Consume body to release connection
-          console.log("Retrying in 0.25s...");
-          await new Promise(resolve => setTimeout(resolve, 250)); // Wait for 250ms
+          // 消耗响应体以释放连接。对于流式响应，这可以防止连接挂起。
+          await response.body?.cancel();
+          console.log("Retrying in 0.5s...");
+          await new Promise(resolve => setTimeout(resolve, 500)); // 等待 500ms
         }
+        // 如果是最后一次尝试，循环将结束，并返回 lastResponse
 
       } catch (error: unknown) {
-        console.error(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`);
-        return new Response(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`, { status: 502 });
+        // 捕获网络错误等，这些错误发生在 fetch 本身，比如流中断
+        console.error(`Request failed with network error on attempt ${attempt + 1}:`, error);
+        
+        // 如果不是最后一次尝试，等待后重试
+        if (attempt < maxRetries) {
+          console.log("Retrying in 0.5s...");
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } else {
+          // 所有重试都因网络错误失败，返回 502
+          console.error(`Request failed with network error after ${maxRetries + 1} attempts.`);
+          return new Response(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知网络错误"}`, { status: 502 });
+        }
       }
     }
 
-    // If the loop finishes, it means all attempts resulted in 429.
-    // Return the last captured response.
-    console.error(`Request failed with 429 after ${maxRetries + 1} attempts. No more retries.`);
-    return lastResponse!;
+    // 如果循环结束，说明所有尝试都失败了（无论是429/503还是网络错误）。
+    // 如果最后一次失败是429/503，lastResponse 会被设置。
+    if (lastResponse) {
+        console.error(`Request failed with ${lastResponse.status} after ${maxRetries + 1} attempts. No more retries.`);
+        return lastResponse;
+    }
+    
+    // Fallback, should not be reached if the logic above is correct
+    return new Response("代理请求最终失败，且未捕获到明确的响应或错误。", { status: 500 });
+
   } catch (error: unknown) {
     console.error("API 代理请求处理错误:", error);
     return new Response(`代理请求处理错误: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`, { status: 500 });

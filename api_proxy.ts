@@ -46,14 +46,40 @@ export async function handleApiProxy(request: Request): Promise<Response> {
     // 只要尝试转发，就立刻计数，无论成功与否
     kvManager.updateKeyUsage(apiKey);
 
-    try {
-      // 转发请求
-      const response = await fetch(new Request(newUrl, request));
-      return response;
-    } catch (error: unknown) {
-      console.error(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`);
-      return new Response(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`, { status: 502 });
+    const maxRetries = 2;
+    let lastResponse: Response | undefined;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(new Request(newUrl, request));
+
+        if (response.status !== 429) {
+          // Not a 429, so we return the response directly
+          return response;
+        }
+
+        // It's a 429, store it and prepare for retry
+        lastResponse = response;
+        
+        console.log(`Request to ${newUrl.pathname} failed with 429. Attempt ${attempt + 1} of ${maxRetries + 1}.`);
+
+        // We must consume the response body to close the connection and allow for a retry.
+        // If this is the last attempt, we don't consume the body, as we will return this response.
+        if (attempt < maxRetries) {
+          await response.text(); // Consume body to release connection
+          console.log("Retrying...");
+        }
+
+      } catch (error: unknown) {
+        console.error(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`);
+        return new Response(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`, { status: 502 });
+      }
     }
+
+    // If the loop finishes, it means all attempts resulted in 429.
+    // Return the last captured response.
+    console.error(`Request failed with 429 after ${maxRetries + 1} attempts. No more retries.`);
+    return lastResponse!;
   } catch (error: unknown) {
     console.error("API 代理请求处理错误:", error);
     return new Response(`代理请求处理错误: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`, { status: 500 });

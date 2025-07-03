@@ -53,8 +53,8 @@ export async function handleApiProxy(request: Request): Promise<Response> {
       try {
         const response = await fetch(new Request(newUrl, request));
 
-        // 对于 429 (Too Many Requests) 和 503 (Service Unavailable) 错误进行重试
-        if (response.status !== 429 && response.status !== 503) {
+        // 对于 429 (Too Many Requests) 和 5xx (服务器错误) 系列错误进行重试
+        if (response.status < 500 && response.status !== 429) {
           // 不是可重试的错误，直接返回响应
           return response;
         }

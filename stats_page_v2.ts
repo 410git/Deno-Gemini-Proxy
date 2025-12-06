@@ -693,53 +693,21 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               opacity: 0.5;
             }
 
-            /* 导出块样式 */
-            .export-container {
-              background: rgba(255, 255, 255, 0.05);
-              backdrop-filter: blur(10px);
-              border: 1px solid rgba(255, 255, 255, 0.1);
-              border-radius: 16px;
-              padding: 30px;
-              margin-bottom: 30px;
-              display: none;
-              animation: fadeInUp 0.5s ease-out;
-            }
-
-            .export-container.active {
-              display: block;
-            }
-
-            .export-header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 20px;
-            }
-
-            .export-title {
-              color: var(--text-primary);
-              font-weight: 600;
-              font-size: 1.1rem;
-            }
-
-            .export-close {
-              background: rgba(255, 255, 255, 0.1);
+            /* 导出Keys功能样式 */
+            .export-keys-container {
+              background: rgba(255, 255, 255, 0.08);
+              backdrop-filter: blur(15px);
               border: 1px solid rgba(255, 255, 255, 0.2);
-              color: var(--text-primary);
-              cursor: pointer;
-              padding: 8px 16px;
-              border-radius: 8px;
-              font-size: 0.9rem;
-              transition: all 0.3s ease;
+              border-radius: 16px;
+              padding: 25px;
+              margin-bottom: 30px;
+              animation: fadeInUp 0.4s ease-out;
+              box-shadow: 0 8px 32px rgba(0,0,0,0.2);
             }
 
-            .export-close:hover {
-              background: rgba(255, 255, 255, 0.2);
-              transform: scale(1.05);
-            }
-
-            .export-content {
-              background: rgba(0, 0, 0, 0.3);
+            .export-keys-list {
+              background: rgba(0, 0, 0, 0.2);
+              backdrop-filter: blur(5px);
               border: 1px solid rgba(255, 255, 255, 0.1);
               border-radius: 12px;
               padding: 20px;
@@ -747,50 +715,75 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               overflow-y: auto;
               font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
               font-size: 0.9rem;
-              color: var(--text-secondary);
               line-height: 1.8;
-              word-break: break-all;
+              color: var(--text-secondary);
               scrollbar-width: thin;
               scrollbar-color: rgba(255,255,255,0.3) transparent;
             }
 
-            .export-content::-webkit-scrollbar {
-              width: 6px;
+            .export-keys-list::-webkit-scrollbar {
+              width: 8px;
             }
 
-            .export-content::-webkit-scrollbar-track {
-              background: rgba(255,255,255,0.1);
-              border-radius: 3px;
+            .export-keys-list::-webkit-scrollbar-track {
+              background: rgba(255,255,255,0.05);
+              border-radius: 4px;
             }
 
-            .export-content::-webkit-scrollbar-thumb {
+            .export-keys-list::-webkit-scrollbar-thumb {
               background: rgba(255,255,255,0.3);
-              border-radius: 3px;
+              border-radius: 4px;
             }
 
-            .export-actions {
-              margin-top: 15px;
-              display: flex;
-              gap: 10px;
-              justify-content: flex-end;
+            .export-keys-list::-webkit-scrollbar-thumb:hover {
+              background: rgba(255,255,255,0.4);
             }
 
-            .export-btn {
-              background: rgba(59, 130, 246, 0.2);
-              border: 1px solid rgba(59, 130, 246, 0.4);
-              color: var(--text-primary);
-              cursor: pointer;
-              padding: 10px 20px;
-              border-radius: 8px;
-              font-size: 0.9rem;
+            .key-line {
+              padding: 6px 10px;
+              margin: 2px 0;
+              background: rgba(255, 255, 255, 0.05);
+              border-radius: 6px;
+              border-left: 3px solid transparent;
               transition: all 0.3s ease;
-              font-weight: 500;
+              word-break: break-all;
             }
 
-            .export-btn:hover {
+            .key-line:hover {
+              background: rgba(255, 255, 255, 0.1);
+              border-left-color: var(--text-primary);
+              transform: translateX(5px);
+            }
+
+            .glass-btn-small {
+              appearance: none;
+              padding: 8px 16px;
+              font-size: 0.85rem;
+              font-weight: 600;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              border-radius: 20px;
+              cursor: pointer;
+              background: rgba(255, 255, 255, 0.1);
+              backdrop-filter: blur(10px);
+              color: var(--text-primary);
+              transition: all 0.3s ease;
+            }
+
+            .glass-btn-small:hover {
+              background: rgba(255, 255, 255, 0.2);
+              border-color: rgba(255, 255, 255, 0.5);
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            }
+
+            .glass-btn-small.primary {
+              background: rgba(59, 130, 246, 0.2);
+              border-color: rgba(59, 130, 246, 0.4);
+            }
+
+            .glass-btn-small.primary:hover {
               background: rgba(59, 130, 246, 0.3);
               border-color: rgba(59, 130, 246, 0.6);
-              transform: translateY(-2px);
             }
           </style>
         </head>
@@ -913,20 +906,20 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               </div>
             </div>
 
-            <!-- 导出所有Keys块 -->
-            <div class="export-container" id="exportContainer">
-              <div class="export-header">
-                <h4 class="export-title">📋 所有 API Keys</h4>
-                <button class="export-close" onclick="toggleExport()">✕ 关闭</button>
+            <!-- 导出所有Keys的显示区域 -->
+            <div id="exportKeysContainer" class="export-keys-container" style="display: none;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--text-primary); font-weight: 600;">📋 所有 API Keys</h3>
+                <button class="glass-btn-small" onclick="closeExportKeys()">✕ 关闭</button>
               </div>
-              <div class="export-content" id="exportContent"></div>
-              <div class="export-actions">
-                <button class="export-btn" onclick="copyAllKeys()">📋 复制全部</button>
+              <div id="exportKeysList" class="export-keys-list"></div>
+              <div style="margin-top: 15px; text-align: center;">
+                <button class="glass-btn-small primary" onclick="copyAllKeys()">📋 复制全部</button>
               </div>
             </div>
 
             <div class="actions">
-              <button type="button" class="glass-btn" onclick="toggleExport()">
+              <button class="glass-btn" onclick="toggleExportKeys()">
                 📤 导出所有 Keys
               </button>
               <form action="/clearstats" method="POST" style="display: inline;">
@@ -949,96 +942,94 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
           </div>
 
           <script>
-            // 主题管理
-            let currentTheme = localStorage.getItem('dashboard-theme') || 'rainbow';
-            let themeMenuOpen = false;
-
-            // 导出功能
+            // 导出所有Keys功能
             const allKeys = ${JSON.stringify(Object.keys(state.stats))};
             
-            function toggleExport() {
-              const container = document.getElementById('exportContainer');
-              const content = document.getElementById('exportContent');
+            function toggleExportKeys() {
+              const container = document.getElementById('exportKeysContainer');
+              const keysList = document.getElementById('exportKeysList');
               
-              if (container.classList.contains('active')) {
-                container.classList.remove('active');
-              } else {
-                // 显示所有keys，每行一个
-                content.textContent = allKeys.join('\\n');
-                container.classList.add('active');
+              if (container.style.display === 'none') {
+                // 显示导出区域
+                container.style.display = 'block';
                 
-                // 滚动到导出块
+                // 生成key列表
+                if (allKeys.length > 0) {
+                  keysList.innerHTML = allKeys.map(key => 
+                    \`<div class="key-line">\${key}</div>\`
+                  ).join('');
+                } else {
+                  keysList.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">暂无API Keys</div>';
+                }
+                
+                // 滚动到导出区域
                 container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                // 显示提示
+                showThemeNotification('已列出所有 Keys', '✅');
+              } else {
+                // 隐藏导出区域
+                container.style.display = 'none';
               }
+            }
+            
+            function closeExportKeys() {
+              const container = document.getElementById('exportKeysContainer');
+              container.style.display = 'none';
             }
             
             function copyAllKeys() {
-              const text = allKeys.join('\\n');
+              if (allKeys.length === 0) {
+                showThemeNotification('没有 Keys 可复制', '⚠️');
+                return;
+              }
               
-              // 使用现代剪贴板API
+              const keysText = allKeys.join('\\n');
+              
+              // 尝试使用现代剪贴板API
               if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => {
-                  showNotification('✅ 已复制 ' + allKeys.length + ' 个 Keys', 'success');
-                }).catch(err => {
-                  // 降级方案
-                  fallbackCopy(text);
-                });
+                navigator.clipboard.writeText(keysText)
+                  .then(() => {
+                    showThemeNotification(\`已复制 \${allKeys.length} 个 Keys\`, '📋');
+                  })
+                  .catch(err => {
+                    // 降级到传统方法
+                    fallbackCopyToClipboard(keysText);
+                  });
               } else {
-                // 降级方案
-                fallbackCopy(text);
+                // 降级到传统方法
+                fallbackCopyToClipboard(keysText);
               }
             }
             
-            function fallbackCopy(text) {
-              const textarea = document.createElement('textarea');
-              textarea.value = text;
-              textarea.style.position = 'fixed';
-              textarea.style.opacity = '0';
-              document.body.appendChild(textarea);
-              textarea.select();
+            function fallbackCopyToClipboard(text) {
+              const textArea = document.createElement('textarea');
+              textArea.value = text;
+              textArea.style.position = 'fixed';
+              textArea.style.top = '0';
+              textArea.style.left = '0';
+              textArea.style.opacity = '0';
+              document.body.appendChild(textArea);
+              textArea.focus();
+              textArea.select();
               
               try {
-                document.execCommand('copy');
-                showNotification('✅ 已复制 ' + allKeys.length + ' 个 Keys', 'success');
+                const successful = document.execCommand('copy');
+                if (successful) {
+                  showThemeNotification(\`已复制 \${allKeys.length} 个 Keys\`, '📋');
+                } else {
+                  showThemeNotification('复制失败，请手动复制', '❌');
+                }
               } catch (err) {
-                showNotification('❌ 复制失败，请手动复制', 'error');
+                showThemeNotification('复制失败，请手动复制', '❌');
               }
               
-              document.body.removeChild(textarea);
+              document.body.removeChild(textArea);
             }
-            
-            function showNotification(message, type = 'info') {
-              const notification = document.createElement('div');
-              const bgColor = type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 
-                               type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 
-                               'rgba(59, 130, 246, 0.2)';
-              const borderColor = type === 'success' ? 'rgba(34, 197, 94, 0.4)' : 
-                                  type === 'error' ? 'rgba(239, 68, 68, 0.4)' : 
-                                  'rgba(59, 130, 246, 0.4)';
-              
-              notification.style.cssText = \\`
-                position: fixed;
-                top: 80px;
-                right: 20px;
-                background: \\${bgColor};
-                backdrop-filter: blur(10px);
-                border: 1px solid \\${borderColor};
-                border-radius: 12px;
-                padding: 15px 20px;
-                color: var(--text-primary);
-                font-size: 0.9rem;
-                z-index: 1001;
-                animation: slideInRight 0.3s ease-out;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-              \\`;
-              notification.textContent = message;
-              document.body.appendChild(notification);
 
-              setTimeout(() => {
-                notification.style.animation = 'slideOutRight 0.3s ease-in forwards';
-                setTimeout(() => notification.remove(), 300);
-              }, 2500);
-            }
+            // 主题管理
+            let currentTheme = localStorage.getItem('dashboard-theme') || 'rainbow';
+            let themeMenuOpen = false;
 
             // 主题配置
             const themes = {

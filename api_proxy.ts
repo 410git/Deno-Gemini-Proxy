@@ -1,5 +1,5 @@
 // api_proxy.ts
-import { kvManager } from "./kv_manager.ts";
+import { keyManager } from "./kv_manager.ts";
 import { TARGET_API_BASE_URL } from "./config.ts";
 
 // 在模块加载时预解析和验证目标URL，实现快速失败
@@ -28,7 +28,7 @@ export async function handleApiProxy(request: Request): Promise<Response> {
   try {
     const url = new URL(request.url);
 
-    const apiKey = kvManager.getNextApiKey();
+    const apiKey = keyManager.getRandomApiKey();
     if (!apiKey) {
       console.warn("未找到可用的 API Key。");
       return new Response("🔒 未配置 API Key", { status: 500 });
@@ -42,7 +42,6 @@ export async function handleApiProxy(request: Request): Promise<Response> {
     newUrl.searchParams.set('key', apiKey);
 
     console.log(`Forwarding request (using key: ${apiKey.slice(0, 4)}...) to: ${newUrl.toString()}`);
-    kvManager.updateKeyUsage(apiKey);
 
     const maxRetries = 2;
     let lastResponse: Response | undefined;
@@ -55,7 +54,7 @@ export async function handleApiProxy(request: Request): Promise<Response> {
       try {
         const response = await fetch(new Request(newUrl, requestForThisAttempt));
         const duration = Date.now() - startTime;
-        
+
         lastResponse = response;
 
         const isStatusRetry = response.status === 429 || response.status >= 500;
@@ -75,55 +74,55 @@ export async function handleApiProxy(request: Request): Promise<Response> {
         if (isStatusRetry) {
           console.log(`Request failed with status ${response.status}. Attempt ${attempt + 1} of ${maxRetries + 1}. Retrying...`);
         }
-        
+
         if (isTimeoutRetry) {
           console.log(`Request finished in ${duration}ms (too fast). Attempt ${attempt + 1} of ${maxRetries + 1}. Retrying with modified content...`);
-          
-          if (request.body) {
-              try {
-                  const body = await request.clone().json();
-                  
-                  if (body.messages && Array.isArray(body.messages) && body.messages.length > 0) {
-                      const lastMessage = body.messages[body.messages.length - 1];
-                      if (lastMessage.role === 'user' && typeof lastMessage.content === 'string') {
-                          const randomPrefix = generateRandomString(10);
-                          lastMessage.content = randomPrefix + lastMessage.content;
-                          console.log(`Added random prefix: "${randomPrefix}"`);
-                      }
-                  }
-                  
-                  const newRequestInit: RequestInit = {
-                      method: request.method,
-                      headers: request.headers,
-                      body: JSON.stringify(body),
-                  };
-                  requestToForward = new Request(request.url, newRequestInit);
 
-              } catch (jsonError) {
-                  console.error("Could not parse request body as JSON for modification. Retrying without changes.", jsonError);
-                  requestToForward = request;
+          if (request.body) {
+            try {
+              const body = await request.clone().json();
+
+              if (body.messages && Array.isArray(body.messages) && body.messages.length > 0) {
+                const lastMessage = body.messages[body.messages.length - 1];
+                if (lastMessage.role === 'user' && typeof lastMessage.content === 'string') {
+                  const randomPrefix = generateRandomString(10);
+                  lastMessage.content = randomPrefix + lastMessage.content;
+                  console.log(`Added random prefix: "${randomPrefix}"`);
+                }
               }
+
+              const newRequestInit: RequestInit = {
+                method: request.method,
+                headers: request.headers,
+                body: JSON.stringify(body),
+              };
+              requestToForward = new Request(request.url, newRequestInit);
+
+            } catch (jsonError) {
+              console.error("Could not parse request body as JSON for modification. Retrying without changes.", jsonError);
+              requestToForward = request;
+            }
           }
         }
-        
+
         await new Promise(resolve => setTimeout(resolve, 500));
 
       } catch (error: unknown) {
         console.error(`Request failed with network error on attempt ${attempt + 1}:`, error);
-        
+
         if (attempt >= maxRetries) {
           console.error(`Request failed with network error after ${maxRetries + 1} attempts.`);
           return new Response(`代理请求失败: ${(error instanceof Error ? error.message : String(error)) || "未知网络错误"}`, { status: 502 });
         }
-        
+
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
     if (lastResponse) {
-        return lastResponse;
+      return lastResponse;
     }
-    
+
     return new Response("代理请求最终失败，且未捕获到明确的响应或错误。", { status: 500 });
 
   } catch (error: unknown) {

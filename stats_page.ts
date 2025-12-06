@@ -1,242 +1,280 @@
-// stats_page.ts
-import { kvManager } from "./kv_manager.ts";
+// stats_page.ts – 经典统计页面（简化版）
+import { keyManager } from "./kv_manager.ts";
 
+/**
+ * 处理经典统计页面 - 简化版本，仅显示Keys信息
+ * @param request Request 对象
+ * @param clientKey 已通过鉴权的 master key
+ */
 export async function handleStatsPage(request: Request, clientKey: string): Promise<Response> {
-  // GET请求 - 显示统计页面
+  // GET – 返回页面
   if (request.method === "GET") {
-    // 一次性获取状态快照，保证数据一致性
-    const state = kvManager.getMemoryState();
+    const allKeys = keyManager.getAllKeys();
+    const keysCount = keyManager.getKeysCount();
+
     const statsHTML = `
       <!DOCTYPE html>
       <html lang="zh-CN">
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>API Key 统计看板</title>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>API Key 管理面板</title>
           <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-              background-color: #f8f9fa; /* 更浅的背景灰 */
-              color: #343a40; /* 深色文本 */
-              margin: 0;
-              padding: 20px;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              min-height: 100vh;
+            * {
               box-sizing: border-box;
+              margin: 0;
+              padding: 0;
             }
-            .container {
-              max-width: 900px; /* 稍微加宽 */
-              width: 100%;
-              background-color: #ffffff;
-              padding: 30px;
-              border-radius: 12px; /* 更圆的角 */
-              box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); /* 更柔和的阴影 */
-              margin-top: 20px;
-              margin-bottom: 20px;
-            }
-            .stats-header {
-              text-align: center;
-              margin-bottom: 35px;
-              padding-bottom: 25px;
-              border-bottom: 1px solid #e9ecef;
-            }
-            .stats-header h1 {
-              color: #007bff; /* 鲜艳的蓝色 */
-              margin-bottom: 15px;
-              font-size: 2.2em; /* 稍大标题 */
-              font-weight: 600;
-            }
-            .stats-summary {
-              display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* 响应式网格 */
-              gap: 20px; /* 网格间距 */
-              margin-bottom: 35px;
-              text-align: left;
-            }
-            .summary-item {
-              background-color: #f1f3f5; /* 项目背景 */
+
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: #fff;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
               padding: 20px;
-              border-radius: 8px;
-              border: 1px solid #dee2e6;
             }
-            .summary-item-label {
-              font-size: 0.9em;
-              color: #6c757d; /* 标签颜色 */
-              margin-bottom: 8px;
+
+            .container {
+              background: rgba(255, 255, 255, 0.1);
+              backdrop-filter: blur(10px);
+              border-radius: 20px;
+              padding: 40px;
+              max-width: 800px;
+              width: 100%;
+              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            }
+
+            h1 {
+              text-align: center;
+              margin-bottom: 30px;
+              font-size: 2.5rem;
+              text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+
+            .stats-card {
+              background: rgba(255, 255, 255, 0.15);
+              border-radius: 15px;
+              padding: 30px;
+              margin-bottom: 30px;
+              text-align: center;
+            }
+
+            .stat-value {
+              font-size: 3rem;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+
+            .stat-label {
+              font-size: 1rem;
+              opacity: 0.8;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+
+            .info-box {
+              background: rgba(59, 130, 246, 0.2);
+              border: 1px solid rgba(59, 130, 246, 0.5);
+              border-radius: 10px;
+              padding: 20px;
+              margin-bottom: 30px;
+              text-align: center;
+            }
+
+            .keys-container {
+              background: rgba(0, 0, 0, 0.2);
+              border-radius: 10px;
+              padding: 20px;
+              margin-bottom: 30px;
+              max-height: 400px;
+              overflow-y: auto;
+              display: none;
+            }
+
+            .keys-container.show {
               display: block;
             }
-            .summary-item-value {
-              font-size: 1.2em;
-              font-weight: 600;
-              color: #212529;
-            }
-            .summary-item-value strong {
-              color: #007bff;
-            }
-            .summary-item-value code {
-              background-color: #e9ecef;
-              padding: 3px 6px;
-              border-radius: 4px;
-              font-size: 0.85em;
-              word-break: break-all;
-              color: #c92a2a; /* 代码用深红色 */
-            }
-            h2.list-title {
-              text-align: center;
-              color: #343a40;
-              margin-top: 40px;
-              margin-bottom: 25px;
-              font-size: 1.8em;
-              font-weight: 600;
-            }
-            .key-list {
-              list-style: none;
-              padding: 0;
-              margin-bottom: 30px;
-            }
+
             .key-item {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              padding: 18px 20px; /* 增加内边距 */
-              border: 1px solid #e0e0e0;
+              background: rgba(255, 255, 255, 0.1);
+              padding: 10px;
+              margin-bottom: 10px;
               border-radius: 8px;
-              margin-bottom: 12px;
-              background-color: #fff;
-              box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-              transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            }
-            .key-item:hover {
-              transform: translateY(-3px) scale(1.01); /* 悬停效果 */
-              box-shadow: 0 5px 12px rgba(0, 0, 0, 0.08);
-            }
-            .key-details {
-              display: flex;
-              align-items: center;
-              gap: 18px; /* Key 索引和值的间距 */
-              flex-grow: 1;
-              overflow: hidden; /* 防止内容溢出 */
-            }
-            .key-index {
-              font-weight: 700; /* 加粗 */
-              color: #495057;
-              min-width: 75px; /* 保证对齐 */
-              font-size: 0.95em;
-            }
-            .key-value {
-              font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-              color: #212529;
+              font-family: 'Courier New', monospace;
               word-break: break-all;
-              font-size: 0.95em;
-              background-color: #f8f9fa; /* 给 key 值一个浅色背景 */
-              padding: 3px 6px;
-              border-radius: 4px;
+              font-size: 0.9rem;
             }
-            .key-count {
-              font-weight: 700; /* 加粗 */
-              color: #28a745; /* 绿色计数 */
-              min-width: 90px;
-              text-align: right;
-              font-size: 1.1em; /* 稍大计数 */
+
+            .buttons {
+              display: flex;
+              gap: 15px;
+              justify-content: center;
+              flex-wrap: wrap;
             }
-            .no-keys-message {
-              text-align: center;
-              padding: 20px;
-              color: #6c757d;
-              font-style: italic;
-            }
-            .reset-form {
-              text-align: center;
-              margin-top: 40px;
-            }
-            .reset-btn {
-              background: linear-gradient(145deg, #e74c3c, #c0392b); /* 渐变红色 */
-              color: white;
-              border: none;
-              padding: 14px 30px; /* 按钮更大 */
-              border-radius: 8px;
+
+            button, .btn {
+              background: rgba(255, 255, 255, 0.2);
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              color: #fff;
+              padding: 12px 30px;
+              border-radius: 25px;
               cursor: pointer;
-              font-size: 1.05em;
-              font-weight: 600;
-              transition: all 0.25s ease;
-              box-shadow: 0 3px 8px rgba(220, 53, 69, 0.3);
+              font-size: 1rem;
+              transition: all 0.3s ease;
+              text-decoration: none;
+              display: inline-block;
             }
-            .reset-btn:hover {
-              background: linear-gradient(145deg, #c0392b, #a93226); /* 悬停时更深 */
+
+            button:hover, .btn:hover {
+              background: rgba(255, 255, 255, 0.3);
               transform: translateY(-2px);
-              box-shadow: 0 5px 12px rgba(220, 53, 69, 0.4);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             }
-            .reset-btn:active {
-              transform: translateY(0);
-              box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
+
+            button.primary {
+              background: rgba(59, 130, 246, 0.4);
+              border-color: rgba(59, 130, 246, 0.6);
+            }
+
+            button.primary:hover {
+              background: rgba(59, 130, 246, 0.6);
+            }
+
+            .link-section {
+              text-align: center;
+              margin-top: 30px;
+            }
+
+            .link-section a {
+              color: rgba(255, 255, 255, 0.8);
+              text-decoration: none;
+              padding: 8px 20px;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              border-radius: 20px;
+              transition: all 0.3s ease;
+            }
+
+            .link-section a:hover {
+              background: rgba(255, 255, 255, 0.1);
+              color: #fff;
+            }
+
+            @media (max-width: 600px) {
+              .container {
+                padding: 20px;
+              }
+
+              h1 {
+                font-size: 2rem;
+              }
+
+              .buttons {
+                flex-direction: column;
+              }
+
+              button, .btn {
+                width: 100%;
+              }
             }
           </style>
         </head>
         <body>
           <div class="container">
-            <div class="stats-header"><h1>📊 API Key 看板</h1></div>
-            <div class="stats-summary">
-              <div class="summary-item">
-                <span class="summary-item-label">总请求数</span>
-                <div class="summary-item-value"><strong>${state.totalRequests}</strong></div>
-              </div>
-              <div class="summary-item">
-                <span class="summary-item-label">状态版本</span>
-                <div class="summary-item-value"><strong>v${state.version}</strong></div>
-              </div>
-              <div class="summary-item">
-                <span class="summary-item-label">当前 Key 索引</span>
-                <div class="summary-item-value"><strong>${state.keyIndex}</strong></div>
-              </div>
-              <div class="summary-item">
-                <span class="summary-item-label">上次同步时间</span>
-                <div class="summary-item-value"><strong>${state.lastSync > 0 ? new Date(state.lastSync).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '尚未同步'}</strong></div>
-              </div>
+            <h1>🔑 API Key 管理面板</h1>
+            
+            <div class="stats-card">
+              <div class="stat-value">${keysCount}</div>
+              <div class="stat-label">已配置的 API Keys</div>
             </div>
-            <h2 class="list-title">🔑 API Key 使用统计</h2>
-            <ul class="key-list">
-              ${Object.entries(state.stats).length > 0
-                ? Object.entries(state.stats).map(([key, count], index) => `
-                  <li class="key-item">
-                    <div class="key-details">
-                      <span class="key-index">Key ${index + 1}:</span>
-                      <code class="key-value">${key}</code>
-                    </div>
-                    <span class="key-count">${count} 次</span>
-                  </li>`).join("")
-                : '<li>暂无统计</li>'}
-            </ul>
-            <div class="reset-form">
-              <form action="/reset" method="POST">
-                <input type="hidden" name="key" value="${clientKey}">
-                <button type="submit" class="reset-btn">重置所有状态和 KV 存储</button>
-              </form>
-              <form action="/clearstats" method="POST" style="margin-top: 15px;">
-                <input type="hidden" name="key" value="${clientKey}">
-                <button type="submit" class="reset-btn" style="background: linear-gradient(145deg, #3498db, #2980b9);">清空统计数据</button>
-              </form>
+
+            <div class="info-box">
+              <strong>ℹ️ 随机Key模式</strong><br>
+              系统已配置为随机选择 API Key 模式，每次请求将随机使用一个 Key。<br>
+              无需KV存储，无统计数据保存。
             </div>
-            <div style="text-align:center;margin-top:25px;">
-              <a href="/stats2?key=${clientKey}" style="color:#007bff;text-decoration:underline;font-weight:600;">前往炫酷 V2 看板 →</a>
+
+            <div id="keysContainer" class="keys-container">
+              ${allKeys.map((key, index) => `
+                <div class="key-item">${index + 1}. ${key}</div>
+              `).join('')}
+            </div>
+
+            <div class="buttons">
+              <button class="primary" onclick="toggleKeys()">
+                <span id="toggleText">📤 查看所有 Keys</span>
+              </button>
+              <button onclick="copyKeys()">📋 复制全部</button>
+            </div>
+
+            <div class="link-section">
+              <a href="/stats2?key=${clientKey}">✨ 切换到炫酷看板</a>
             </div>
           </div>
+
+          <script>
+            const allKeys = ${JSON.stringify(allKeys)};
+            let keysVisible = false;
+
+            function toggleKeys() {
+              const container = document.getElementById('keysContainer');
+              const toggleText = document.getElementById('toggleText');
+              keysVisible = !keysVisible;
+              
+              if (keysVisible) {
+                container.classList.add('show');
+                toggleText.textContent = '🔒 隐藏 Keys';
+              } else {
+                container.classList.remove('show');
+                toggleText.textContent = '📤 查看所有 Keys';
+              }
+            }
+
+            function copyKeys() {
+              if (allKeys.length === 0) {
+                alert('没有 Keys 可复制');
+                return;
+              }
+
+              const keysText = allKeys.join('\\n');
+              
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(keysText)
+                  .then(() => {
+                    alert(\`已复制 \${allKeys.length} 个 Keys 到剪贴板\`);
+                  })
+                  .catch(err => {
+                    fallbackCopy(keysText);
+                  });
+              } else {
+                fallbackCopy(keysText);
+              }
+            }
+
+            function fallbackCopy(text) {
+              const textArea = document.createElement('textarea');
+              textArea.value = text;
+              textArea.style.position = 'fixed';
+              textArea.style.opacity = '0';
+              document.body.appendChild(textArea);
+              textArea.select();
+              
+              try {
+                document.execCommand('copy');
+                alert(\`已复制 \${allKeys.length} 个 Keys 到剪贴板\`);
+              } catch (err) {
+                alert('复制失败，请手动复制');
+              }
+              
+              document.body.removeChild(textArea);
+            }
+          </script>
         </body>
       </html>`;
+
     return new Response(statsHTML, { headers: { "content-type": "text/html; charset=utf-8" } });
-  }
-  
-  if (request.method === "POST") {
-    const { pathname } = new URL(request.url);
-    if (pathname === "/reset") {
-      await kvManager.resetKvStore();
-      return new Response("✅ KV 存储和状态已重置。", { status: 200 });
-    }
-    if (pathname === "/clearstats") {
-      await kvManager.clearStats();
-      return new Response("✅ 统计数据已清空。", { status: 200 });
-    }
   }
 
   return new Response("❌ 无效操作", { status: 400 });

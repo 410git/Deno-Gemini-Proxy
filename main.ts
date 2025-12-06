@@ -1,4 +1,4 @@
-import { keyManager } from "./kv_manager.ts";
+import { keyManager } from "./key_manager.ts";
 import { handleStatsPage } from "./stats_page.ts";
 import { handleStatsPageV2 } from "./stats_page_v2.ts";
 import { handleApiProxy } from "./api_proxy.ts";
@@ -20,7 +20,7 @@ async function handler(request: Request): Promise<Response> {
           if (formData.has('key')) {
             clientKey = clientKey || formData.get('key') as string;
           }
-        } catch (e) {
+        } catch (_e) {
           // 忽略解析错误，例如当请求体不是表单时
         }
       }
@@ -28,7 +28,7 @@ async function handler(request: Request): Promise<Response> {
       if (!MASTER_KEY || clientKey !== MASTER_KEY) {
         return new Response('🔒 未授权', { status: 401 });
       }
-      
+
       // 根据不同路径返回对应看板
       if (path === "/stats2" || path === "/statsv2") {
         return handleStatsPageV2(request, clientKey);
@@ -45,7 +45,7 @@ async function handler(request: Request): Promise<Response> {
   } catch (error: unknown) {
     // 特别处理表单解析失败的情况
     if (error instanceof TypeError && (error.message.includes("body used") || error.message.includes("invalid form data"))) {
-        return new Response("Bad Request", { status: 400 });
+      return new Response("Bad Request", { status: 400 });
     }
     console.error("⚠️ 请求处理错误:", error);
     return new Response(`🚨 服务器错误: ${(error instanceof Error ? error.message : String(error)) || "未知错误"}`, { status: 500 });

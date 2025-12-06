@@ -1,5 +1,5 @@
 // stats_page.ts – 经典统计页面（简化版）
-import { keyManager } from "./kv_manager.ts";
+import { keyManager } from "./key_manager.ts";
 
 /**
  * 处理经典统计页面 - 简化版本，仅显示Keys信息

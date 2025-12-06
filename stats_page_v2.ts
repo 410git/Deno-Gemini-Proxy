@@ -1,5 +1,5 @@
 // stats_page_v2.ts – 简化版毛玻璃看板（仅展示和导出Keys）
-import { keyManager } from "./kv_manager.ts";
+import { keyManager } from "./key_manager.ts";
 
 /**
  * 处理 v2 统计页面 - 简化版本，仅显示和导出 API Keys

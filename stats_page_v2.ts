@@ -692,6 +692,106 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               margin-bottom: 20px;
               opacity: 0.5;
             }
+
+            /* 导出块样式 */
+            .export-container {
+              background: rgba(255, 255, 255, 0.05);
+              backdrop-filter: blur(10px);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 16px;
+              padding: 30px;
+              margin-bottom: 30px;
+              display: none;
+              animation: fadeInUp 0.5s ease-out;
+            }
+
+            .export-container.active {
+              display: block;
+            }
+
+            .export-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+            }
+
+            .export-title {
+              color: var(--text-primary);
+              font-weight: 600;
+              font-size: 1.1rem;
+            }
+
+            .export-close {
+              background: rgba(255, 255, 255, 0.1);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              color: var(--text-primary);
+              cursor: pointer;
+              padding: 8px 16px;
+              border-radius: 8px;
+              font-size: 0.9rem;
+              transition: all 0.3s ease;
+            }
+
+            .export-close:hover {
+              background: rgba(255, 255, 255, 0.2);
+              transform: scale(1.05);
+            }
+
+            .export-content {
+              background: rgba(0, 0, 0, 0.3);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 12px;
+              padding: 20px;
+              max-height: 400px;
+              overflow-y: auto;
+              font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+              font-size: 0.9rem;
+              color: var(--text-secondary);
+              line-height: 1.8;
+              word-break: break-all;
+              scrollbar-width: thin;
+              scrollbar-color: rgba(255,255,255,0.3) transparent;
+            }
+
+            .export-content::-webkit-scrollbar {
+              width: 6px;
+            }
+
+            .export-content::-webkit-scrollbar-track {
+              background: rgba(255,255,255,0.1);
+              border-radius: 3px;
+            }
+
+            .export-content::-webkit-scrollbar-thumb {
+              background: rgba(255,255,255,0.3);
+              border-radius: 3px;
+            }
+
+            .export-actions {
+              margin-top: 15px;
+              display: flex;
+              gap: 10px;
+              justify-content: flex-end;
+            }
+
+            .export-btn {
+              background: rgba(59, 130, 246, 0.2);
+              border: 1px solid rgba(59, 130, 246, 0.4);
+              color: var(--text-primary);
+              cursor: pointer;
+              padding: 10px 20px;
+              border-radius: 8px;
+              font-size: 0.9rem;
+              transition: all 0.3s ease;
+              font-weight: 500;
+            }
+
+            .export-btn:hover {
+              background: rgba(59, 130, 246, 0.3);
+              border-color: rgba(59, 130, 246, 0.6);
+              transform: translateY(-2px);
+            }
           </style>
         </head>
         <body class="theme-rainbow">
@@ -773,8 +873,8 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               ${Object.entries(state.stats).length > 0 ? `
                 <ul class="key-list">
                   ${Object.entries(state.stats)
-                    .sort(([,a], [,b]) => b - a)
-                    .map(([key, count], index) => `
+          .sort(([, a], [, b]) => b - a)
+          .map(([key, count], index) => `
                     <li class="key-item" style="animation-delay: ${index * 0.05}s;">
                       <span class="key-index">#${index + 1}</span>
                       <code class="key-value">${key.length > 50 ? key.substring(0, 47) + '...' : key}</code>
@@ -796,15 +896,15 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 0.9rem;">
                 <div style="color: var(--text-secondary);">
                   <strong style="color: var(--text-primary);">上次同步:</strong><br>
-                  ${state.lastSync > 0 ? new Date(state.lastSync).toLocaleString('zh-CN', { 
-                    timeZone: 'Asia/Shanghai',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                  }) : '尚未同步'}
+                  ${state.lastSync > 0 ? new Date(state.lastSync).toLocaleString('zh-CN', {
+            timeZone: 'Asia/Shanghai',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }) : '尚未同步'}
                 </div>
                 <div style="color: var(--text-secondary);">
                   <strong style="color: var(--text-primary);">运行时间:</strong><br>
@@ -813,7 +913,22 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
               </div>
             </div>
 
+            <!-- 导出所有Keys块 -->
+            <div class="export-container" id="exportContainer">
+              <div class="export-header">
+                <h4 class="export-title">📋 所有 API Keys</h4>
+                <button class="export-close" onclick="toggleExport()">✕ 关闭</button>
+              </div>
+              <div class="export-content" id="exportContent"></div>
+              <div class="export-actions">
+                <button class="export-btn" onclick="copyAllKeys()">📋 复制全部</button>
+              </div>
+            </div>
+
             <div class="actions">
+              <button type="button" class="glass-btn" onclick="toggleExport()">
+                📤 导出所有 Keys
+              </button>
               <form action="/clearstats" method="POST" style="display: inline;">
                 <input type="hidden" name="key" value="${clientKey}" />
                 <button type="submit" class="glass-btn primary" onclick="return confirm('确定要清空统计数据吗？此操作不可撤销。')">
@@ -837,6 +952,93 @@ export async function handleStatsPageV2(request: Request, clientKey: string): Pr
             // 主题管理
             let currentTheme = localStorage.getItem('dashboard-theme') || 'rainbow';
             let themeMenuOpen = false;
+
+            // 导出功能
+            const allKeys = ${JSON.stringify(Object.keys(state.stats))};
+            
+            function toggleExport() {
+              const container = document.getElementById('exportContainer');
+              const content = document.getElementById('exportContent');
+              
+              if (container.classList.contains('active')) {
+                container.classList.remove('active');
+              } else {
+                // 显示所有keys，每行一个
+                content.textContent = allKeys.join('\\n');
+                container.classList.add('active');
+                
+                // 滚动到导出块
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }
+            }
+            
+            function copyAllKeys() {
+              const text = allKeys.join('\\n');
+              
+              // 使用现代剪贴板API
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                  showNotification('✅ 已复制 ' + allKeys.length + ' 个 Keys', 'success');
+                }).catch(err => {
+                  // 降级方案
+                  fallbackCopy(text);
+                });
+              } else {
+                // 降级方案
+                fallbackCopy(text);
+              }
+            }
+            
+            function fallbackCopy(text) {
+              const textarea = document.createElement('textarea');
+              textarea.value = text;
+              textarea.style.position = 'fixed';
+              textarea.style.opacity = '0';
+              document.body.appendChild(textarea);
+              textarea.select();
+              
+              try {
+                document.execCommand('copy');
+                showNotification('✅ 已复制 ' + allKeys.length + ' 个 Keys', 'success');
+              } catch (err) {
+                showNotification('❌ 复制失败，请手动复制', 'error');
+              }
+              
+              document.body.removeChild(textarea);
+            }
+            
+            function showNotification(message, type = 'info') {
+              const notification = document.createElement('div');
+              const bgColor = type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 
+                               type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 
+                               'rgba(59, 130, 246, 0.2)';
+              const borderColor = type === 'success' ? 'rgba(34, 197, 94, 0.4)' : 
+                                  type === 'error' ? 'rgba(239, 68, 68, 0.4)' : 
+                                  'rgba(59, 130, 246, 0.4)';
+              
+              notification.style.cssText = \\`
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: \\${bgColor};
+                backdrop-filter: blur(10px);
+                border: 1px solid \\${borderColor};
+                border-radius: 12px;
+                padding: 15px 20px;
+                color: var(--text-primary);
+                font-size: 0.9rem;
+                z-index: 1001;
+                animation: slideInRight 0.3s ease-out;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+              \\`;
+              notification.textContent = message;
+              document.body.appendChild(notification);
+
+              setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease-in forwards';
+                setTimeout(() => notification.remove(), 300);
+              }, 2500);
+            }
 
             // 主题配置
             const themes = {
